@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>I Love You</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.scene {
+    position: relative;
+    width: min(100vw, 760px);
+    height: min(100vh, 760px);
+}
+
+.heart-layer {
+    position: absolute;
+    inset: 0;
+    transform-origin: center;
+    animation: heartbeat 2.2s ease-in-out infinite;
+}
+
+@keyframes heartbeat {
+    0%   { transform: scale(1); }
+    8%   { transform: scale(1.07); }
+    15%  { transform: scale(1); }
+    22%  { transform: scale(1.045); }
+    30%  { transform: scale(1); }
+    100% { transform: scale(1); }
+}
+
+.love {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    color: #ff5faf;
+    font-size: clamp(10px, 1.7vw, 15px);
+    font-weight: 700;
+    white-space: nowrap;
+    text-shadow:
+        0 0 4px rgba(255, 90, 175, .9),
+        0 0 10px rgba(255, 20, 135, .65),
+        0 0 18px rgba(255, 0, 110, .3);
+    pointer-events: none;
+    user-select: none;
+    will-change: left, top, transform;
+}
+
+.love.highlight {
+    color: #ffd5ee;
+    text-shadow:
+        0 0 5px #ffffff,
+        0 0 12px #ff8dcb,
+        0 0 25px #ff168f;
+}
+
+.center-e {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 20;
+    color: #ffd6ed;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(70px, 13vw, 125px);
+    font-weight: 400;
+    line-height: 1;
+    text-align: center;
+    text-shadow:
+        0 0 6px rgba(255,255,255,.9),
+        0 0 15px rgba(255,100,180,.9),
+        0 0 35px rgba(255,20,140,.65),
+        0 0 60px rgba(255,0,110,.3);
+    pointer-events: none;
+    user-select: none;
+}
+
+.rain {
+    position: absolute;
+    top: -220px;
+    writing-mode: vertical-rl;
+    color: #72002f;
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    opacity: 0;
+    text-shadow: 0 0 5px rgba(255,0,90,.45);
+    animation: rainFall linear infinite;
+    pointer-events: none;
+}
+
+@keyframes rainFall {
+    0% {
+        transform: translateY(-20vh);
+        opacity: 0;
+    }
+
+    15% {
+        opacity: .6;
+    }
+
+    75% {
+        opacity: .4;
+    }
+
+    100% {
+        transform: translateY(130vh);
+        opacity: 0;
+    }
+}
+
+@media (max-width: 600px) {
+    .scene {
+        width: 100vw;
+        height: 100vh;
+    }
+
+    .love {
+        font-size: 10px;
+    }
+
+    .center-e {
+        font-size: 75px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .heart-layer {
+        animation: none;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="scene" id="scene">
+    <div id="rainLayer"></div>
+
+    <div class="heart-layer" id="heartLayer">
+        <div class="center-e" id="centerE">E</div>
+    </div>
+</div>
+
+<script>
+const scene = document.getElementById("scene");
+const heartLayer = document.getElementById("heartLayer");
+const rainLayer = document.getElementById("rainLayer");
+const centerE = document.getElementById("centerE");
+
+const phrase = "I LOVE YOU";
+const wordCount = 34;
+const speed = 0.0033;
+const words = [];
+
+for (let i = 0; i < wordCount; i++) {
+    const word = document.createElement("div");
+    word.className = "love";
+    word.textContent = phrase;
+
+    word.startX = Math.random();
+    word.startY = Math.random();
+    word.startRotation = Math.random() * 360 - 180;
+
+    heartLayer.appendChild(word);
+    words.push(word);
+}
+
+function heartPoint(t) {
+    const x = 16 * Math.pow(Math.sin(t), 3);
+
+    const y =
+        13 * Math.cos(t)
+        - 5 * Math.cos(2 * t)
+        - 2 * Math.cos(3 * t)
+        - Math.cos(4 * t);
+
+    return { x, y };
+}
+
+function easeOutCubic(x) {
+    return 1 - Math.pow(1 - x, 3);
+}
+
+let entranceStart = null;
+
+function entrance(timestamp) {
+    if (!entranceStart) {
+        entranceStart = timestamp;
+    }
+
+    const elapsed = timestamp - entranceStart;
+    const duration = 2600;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = easeOutCubic(progress);
+
+    const rect = {
+        width: heartLayer.clientWidth,
+        height: heartLayer.clientHeight
+    };
+
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2 + 5;
+    const scale = Math.min(rect.width, rect.height) / 39;
+
+    // The mathematical heart extends farther downward than upward.
+    // Shift the E to the true visual center of the heart outline.
+    centerE.style.left = centerX + "px";
+    centerE.style.top = (centerY + 2.54 * scale) + "px";
+
+    for (let i = 0; i < wordCount; i++) {
+        const t = (i / wordCount) * Math.PI * 2;
+        const p = heartPoint(t);
+        const next = heartPoint(t + 0.015);
+
+        const targetX = centerX + p.x * scale;
+        const targetY = centerY - p.y * scale;
+
+        const randomX = words[i].startX * rect.width;
+        const randomY = words[i].startY * rect.height;
+
+        const x = randomX + (targetX - randomX) * eased;
+        const y = randomY + (targetY - randomY) * eased;
+
+        const dx = next.x - p.x;
+        const dy = -(next.y - p.y);
+
+        let angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+        if (angle > 90 || angle < -90) {
+            angle += 180;
+        }
+
+        const rotation =
+            words[i].startRotation +
+            (angle - words[i].startRotation) * eased;
+
+        words[i].style.left = x + "px";
+        words[i].style.top = y + "px";
+        words[i].style.transform =
+            `translate(-50%, -50%) rotate(${rotation}deg)`;
+
+        words[i].style.opacity = .15 + (.85 * eased);
+    }
+
+    if (progress < 1) {
+        requestAnimationFrame(entrance);
+    } else {
+        animateHeart();
+    }
+}
+
+requestAnimationFrame(entrance);
+
+let offset = 0;
+let highlightPosition = 0;
+
+function animateHeart() {
+    const rect = {
+        width: heartLayer.clientWidth,
+        height: heartLayer.clientHeight
+    };
+
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2 + 5;
+    const scale = Math.min(rect.width, rect.height) / 39;
+
+    // The mathematical heart extends farther downward than upward.
+    // Shift the E to the true visual center of the heart outline.
+    centerE.style.left = centerX + "px";
+    centerE.style.top = (centerY + 2.54 * scale) + "px";
+
+    for (let i = 0; i < wordCount; i++) {
+        const t =
+            offset +
+            (i / wordCount) * Math.PI * 2;
+
+        const p = heartPoint(t);
+        const next = heartPoint(t + 0.015);
+
+        const x = centerX + p.x * scale;
+        const y = centerY - p.y * scale;
+
+        const dx = next.x - p.x;
+        const dy = -(next.y - p.y);
+
+        let angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+        if (angle > 90 || angle < -90) {
+            angle += 180;
+        }
+
+        words[i].style.left = x + "px";
+        words[i].style.top = y + "px";
+        words[i].style.transform =
+            `translate(-50%, -50%) rotate(${angle}deg)`;
+
+        words[i].style.opacity =
+            .65 + ((Math.sin(t * 2) + 1) * .15);
+
+        words[i].classList.remove("highlight");
+    }
+
+    const highlightIndex =
+        Math.floor(highlightPosition) % wordCount;
+
+    words[highlightIndex].classList.add("highlight");
+    words[(highlightIndex + 1) % wordCount].classList.add("highlight");
+
+    highlightPosition += .035;
+    offset += speed;
+
+    requestAnimationFrame(animateHeart);
+}
+
+const rainCount = 17;
+
+for (let i = 0; i < rainCount; i++) {
+    const rain = document.createElement("div");
+    rain.className = "rain";
+
+    rain.textContent =
+        "I LOVE YOU   I LOVE YOU   I LOVE YOU   I LOVE YOU";
+
+    rain.style.left = (Math.random() * 94 + 3) + "%";
+    rain.style.animationDuration = (6 + Math.random() * 7) + "s";
+    rain.style.animationDelay = (-Math.random() * 12) + "s";
+
+    rainLayer.appendChild(rain);
+}
+</script>
+
+</body>
+</html>
